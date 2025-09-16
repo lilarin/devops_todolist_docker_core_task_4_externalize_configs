@@ -1,5 +1,4 @@
 # docker-compose.yml
-version: '3'
 networks:
   todoapp-net:
 services:
@@ -21,8 +20,10 @@ services:
     networks:
       - todoapp-net
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     restart: unless-stopped
+
   mysql:
     image: mysql-local:1.0.0
     build:
@@ -34,11 +35,17 @@ services:
     volumes:
       - todoapp-db-data:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=1234
-      - MYSQL_DATABASE=app_db
-      - MYSQL_USER=app_user
-      - MYSQL_PASSWORD=1234
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     networks:
       - todoapp-net
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   todoapp-db-data:
